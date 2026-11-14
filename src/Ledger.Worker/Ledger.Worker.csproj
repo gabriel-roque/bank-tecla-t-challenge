@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Ledger.Application/Ledger.Application.csproj" />
+    <ProjectReference Include="../Ledger.Adapters/Ledger.Adapters.csproj" />
+    <PackageReference Include="Confluent.Kafka" />
+  </ItemGroup>
+</Project>

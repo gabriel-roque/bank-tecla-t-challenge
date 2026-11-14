@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="950" viewBox="0 0 1600 950" role="img" aria-labelledby="title desc">
+  <title id="title">Ordenação de eventos e recuperação de lacunas</title>
+  <desc id="desc">A ordem por conta é preservada no Outbox e no Kafka. Duplicatas são ignoradas e lacunas são recuperadas no Ledger.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#64748b"/></marker><marker id="cyan" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#22d3ee"/></marker><marker id="green" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#34d399"/></marker><marker id="amber" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#f59e0b"/></marker>
+    <style>text{font-family:Inter,"Segoe UI",Arial,sans-serif}.title{font-size:34px;font-weight:750;fill:#f8fafc}.subtitle{font-size:15px;fill:#93c5fd}.cap{font-size:12.5px;font-weight:700;letter-spacing:1.2px;fill:#94a3b8}.h{font-size:18px;font-weight:700;fill:#f8fafc}.t{font-size:14px;fill:#cbd5e1}.m{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;font-weight:650;fill:#e2e8f0}.p{font-size:11px;font-weight:700;fill:#dbeafe}.line{fill:none;stroke:#64748b;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrow)}.event{fill:none;stroke:#22d3ee;stroke-width:3;stroke-dasharray:9 7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#cyan)}.ok{fill:none;stroke:#34d399;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#green)}.warn{fill:none;stroke:#f59e0b;stroke-width:3;stroke-dasharray:8 7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#amber)}</style>
+  </defs>
+  <rect width="1600" height="950" fill="#fff"/><rect x="20" y="20" width="1560" height="910" rx="34" fill="#0f172a"/>
+  <text x="72" y="78" class="title">Ordenação de eventos e recuperação de lacunas</text><text x="72" y="108" class="subtitle">Três proteções por conta: Outbox ordenado, partição estável e sequência validada no consumidor</text>
+
+  <rect x="60" y="130" width="1480" height="225" rx="25" fill="#111c31" stroke="#334155"/>
+  <rect x="82" y="146" width="248" height="28" rx="14" fill="#083344"/>
+  <text x="206" y="165" text-anchor="middle" class="cap">CAMINHO DO EVENTO</text>
+  <text x="354" y="165" class="t">três proteções mantêm a ordem por conta</text>
+  <path d="M382 255H463" class="event"/><path d="M740 255H823" class="event"/><path d="M1100 255H1183" class="event"/>
+  <g><rect x="72" y="197" width="310" height="125" rx="19" fill="#1b2838" stroke="#34d399" stroke-width="2"/><text x="100" y="234" class="h">Outbox por conta</text><text x="100" y="260" class="t">libera a menor sequência pendente</text><circle cx="126" cy="293" r="18" fill="#047857"/><text x="126" y="299" text-anchor="middle" class="m">1</text><circle cx="178" cy="293" r="18" fill="#047857"/><text x="178" y="299" text-anchor="middle" class="m">2</text><circle cx="230" cy="293" r="18" fill="#047857"/><text x="230" y="299" text-anchor="middle" class="m">3</text><path d="M252 293h78" stroke="#34d399" stroke-width="3" stroke-linecap="round"/></g>
+  <g><rect x="470" y="197" width="270" height="125" rx="19" fill="#1b2838" stroke="#f59e0b" stroke-width="2"/><text x="498" y="234" class="h">Kafka</text><text x="498" y="260" class="t">partition key = account_id</text><rect x="498" y="278" width="214" height="28" rx="14" fill="#422006"/><text x="605" y="297" text-anchor="middle" class="m">mesma conta · mesma ordem</text></g>
+  <g><rect x="830" y="183" width="270" height="153" rx="19" fill="#1b2838" stroke="#60a5fa" stroke-width="2"/><text x="858" y="221" class="h">Projection Consumer</text><text x="858" y="249" class="t">valida antes de aplicar</text><rect x="858" y="271" width="214" height="38" rx="12" fill="#172554"/><text x="965" y="295" text-anchor="middle" class="m">sequence = last + 1</text></g>
+  <g><rect x="1190" y="197" width="320" height="125" rx="19" fill="#1b2838" stroke="#a78bfa" stroke-width="2"/><text x="1218" y="234" class="h">Read Model</text><text x="1218" y="261" class="t">saldo e extrato consistentes</text><rect x="1218" y="280" width="264" height="27" rx="14" fill="#241c3b"/><text x="1350" y="298" text-anchor="middle" class="m">last_sequence por account_id</text></g>
+
+  <rect x="60" y="365" width="1480" height="245" rx="25" fill="#111c31" stroke="#334155"/>
+  <rect x="82" y="381" width="300" height="28" rx="14" fill="#172554"/>
+  <text x="232" y="400" text-anchor="middle" class="cap">DECISÃO DO CONSUMIDOR</text>
+  <text x="406" y="400" class="t">aplicar, ignorar duplicata ou recuperar lacuna</text>
+  <g><rect x="72" y="415" width="450" height="176" rx="20" fill="#1b2838" stroke="#34d399" stroke-width="2"/><circle cx="112" cy="455" r="18" fill="#047857"/><path d="m104 455 6 6 11-14" fill="none" stroke="#d1fae5" stroke-width="2.5"/><text x="145" y="461" class="h">Próximo evento esperado</text><text x="105" y="501" class="m">recebe 2 · last_sequence = 1</text><path d="M105 531H260" class="ok"/><rect x="267" y="513" width="220" height="38" rx="12" fill="#052e2b"/><text x="377" y="537" text-anchor="middle" class="m">aplica 2 · checkpoint 2</text><text x="105" y="571" class="t">projeção avança exatamente uma posição</text></g>
+
+  <g><rect x="575" y="415" width="450" height="176" rx="20" fill="#1b2838" stroke="#60a5fa" stroke-width="2"/><circle cx="615" cy="455" r="18" fill="#1d4ed8"/><text x="615" y="461" text-anchor="middle" class="p">=</text><text x="648" y="461" class="h">Evento duplicado</text><text x="608" y="501" class="m">recebe 1 · last_sequence = 1</text><path d="M608 531H763" class="line"/><rect x="770" y="513" width="220" height="38" rx="12" fill="#172554"/><text x="880" y="537" text-anchor="middle" class="m">Inbox: event_id já existe</text><text x="608" y="571" class="t">ignora redelivery · saldo não muda</text></g>
+
+  <g><rect x="1078" y="415" width="432" height="176" rx="20" fill="#1b2838" stroke="#f59e0b" stroke-width="2"/><circle cx="1118" cy="455" r="18" fill="#b45309"/><text x="1118" y="461" text-anchor="middle" class="p">!</text><text x="1151" y="461" class="h">Lacuna detectada</text><text x="1110" y="501" class="m">recebe 3 · esperava 2</text><path d="M1110 531H1255" class="warn"/><rect x="1262" y="513" width="215" height="38" rx="12" fill="#451a03"/><text x="1369" y="537" text-anchor="middle" class="m">não aplica fora de ordem</text><text x="1110" y="571" class="t">busca a sequência ausente no Ledger</text></g>
+
+  <rect x="60" y="625" width="1480" height="180" rx="25" fill="#111c31" stroke="#334155"/>
+  <rect x="82" y="641" width="292" height="28" rx="14" fill="#422006"/>
+  <text x="228" y="660" text-anchor="middle" class="cap">RECUPERAÇÃO DA LACUNA</text>
+  <text x="398" y="660" class="t">o Ledger fornece a sequência ausente</text>
+  <path d="M395 735H498" class="warn"/><path d="M755 735H848" class="ok"/><path d="M1115 735H1208" class="ok"/>
+  <g><rect x="72" y="683" width="323" height="104" rx="18" fill="#1b2838" stroke="#a78bfa" stroke-width="2"/><text x="100" y="720" class="h">Ledger</text><text x="100" y="749" class="m">GET account / sequence 2</text><text x="100" y="771" class="t">fonte autoritativa</text></g>
+  <g><rect x="505" y="683" width="250" height="104" rx="18" fill="#1b2838" stroke="#f59e0b" stroke-width="2"/><text x="533" y="720" class="h">Recupera 2</text><text x="533" y="749" class="m">valida tipo + versão</text><text x="533" y="771" class="t">aplica em ordem</text></g>
+  <g><rect x="855" y="683" width="260" height="104" rx="18" fill="#1b2838" stroke="#34d399" stroke-width="2"/><text x="883" y="720" class="h">Aplica 2 → 3</text><text x="883" y="749" class="m">checkpoint = 3</text><text x="883" y="771" class="t">lacuna resolvida</text></g>
+  <g><rect x="1215" y="683" width="295" height="104" rx="18" fill="#1b2838" stroke="#34d399" stroke-width="2"/><text x="1243" y="720" class="h">Processamento retoma</text><text x="1243" y="749" class="m">próximo esperado = 4</text><text x="1243" y="771" class="t">partição liberada</text></g>
+
+  <rect x="60" y="815" width="1480" height="100" rx="25" fill="#111c31" stroke="#334155"/>
+  <rect x="82" y="825" width="232" height="24" rx="12" fill="#241c3b"/>
+  <text x="198" y="842" text-anchor="middle" class="cap">RESULTADO OPERACIONAL</text>
+  <rect x="72" y="855" width="640" height="50" rx="18" fill="#3f1d2e" stroke="#ef4444"/><circle cx="108" cy="880" r="14" fill="#b91c1c"/><text x="108" y="885" text-anchor="middle" class="p">!</text><text x="137" y="876" class="m">Evento inválido ou lacuna irrecuperável</text><text x="137" y="896" class="t">pausa a partição · readiness 503 · nada é descartado</text>
+  <rect x="760" y="855" width="750" height="50" rx="25" fill="#064e3b" stroke="#34d399"/><text x="1135" y="886" text-anchor="middle" class="h">Ordem por conta preservada do Ledger até a projeção</text>
+</svg>

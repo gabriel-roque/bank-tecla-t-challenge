@@ -1,0 +1,122 @@
+asyncapi: 3.1.0
+info:
+  title: Ledger movement events
+  version: 1.0.0
+  description: Eventos financeiros confirmados, entregues pelo menos uma vez e ordenados por conta.
+defaultContentType: application/json
+servers:
+  localKafka:
+    host: kafka-1:9092,kafka-2:9092
+    protocol: kafka
+    description: Cluster Docker local com dois brokers.
+channels:
+  ledgerMovements:
+    address: ledger.movements.v1
+    description: account_id é a chave de partição; a ordem é garantida dentro de cada conta.
+    messages:
+      CreditPosted:
+        $ref: '#/components/messages/CreditPosted'
+      DebitPosted:
+        $ref: '#/components/messages/DebitPosted'
+operations:
+  publishLedgerMovement:
+    action: send
+    channel:
+      $ref: '#/channels/ledgerMovements'
+    messages:
+      - $ref: '#/channels/ledgerMovements/messages/CreditPosted'
+      - $ref: '#/channels/ledgerMovements/messages/DebitPosted'
+  projectLedgerMovement:
+    action: receive
+    channel:
+      $ref: '#/channels/ledgerMovements'
+    messages:
+      - $ref: '#/channels/ledgerMovements/messages/CreditPosted'
+      - $ref: '#/channels/ledgerMovements/messages/DebitPosted'
+components:
+  messages:
+    CreditPosted:
+      name: CreditPosted
+      title: Crédito confirmado
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/LedgerEvent'
+          - type: object
+            properties:
+              eventType:
+                const: CreditPosted
+    DebitPosted:
+      name: DebitPosted
+      title: Débito confirmado
+      correlationId:
+        location: $message.payload#/correlationId
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/LedgerEvent'
+          - type: object
+            properties:
+              eventType:
+                const: DebitPosted
+  schemas:
+    LedgerEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - eventId
+        - accountId
+        - sequence
+        - eventType
+        - eventVersion
+        - amount
+        - currency
+        - effectiveAt
+        - recordedAt
+        - transactionId
+        - correlationId
+        - description
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+          description: Chave usada para particionamento.
+        sequence:
+          type: integer
+          format: int64
+          minimum: 1
+        eventType:
+          type: string
+          enum: [CreditPosted, DebitPosted]
+        eventVersion:
+          type: integer
+          format: int32
+          const: 1
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Valor positivo em centavos.
+        currency:
+          type: string
+          const: BRL
+        effectiveAt:
+          type: string
+          format: date-time
+        recordedAt:
+          type: string
+          format: date-time
+        transactionId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        description:
+          type: string
+          maxLength: 255
+        externalReference:
+          type: [string, 'null']
