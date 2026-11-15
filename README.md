@@ -4,11 +4,6 @@ Implementação em **C#/.NET 10** de um Ledger de créditos e débitos com Event
 
 ## O que está implementado
 
-<img src="docs/img/architecture.svg" />
-<img src="docs/img/concurrency-idempotency.svg" />
-<img src="docs/img/event-ordering-recovery.svg" />
-<img src="docs/img/kafka-worker-resilience.svg" />
-
 - três aplicações independentes: Ledger API, Query API e Ledger Worker;
 - PostgreSQL Ledger como fonte da verdade e outro PostgreSQL para leitura;
 - concorrência otimista por conta, idempotência persistida e saldo nunca negativo;
@@ -19,6 +14,11 @@ Implementação em **C#/.NET 10** de um Ledger de créditos e débitos com Event
 - duas réplicas de cada aplicação, dois brokers Kafka e Nginx;
 - PostgreSQL Ledger primário/standby com WAL síncrono para demonstração local;
 - OpenAPI/Scalar, AsyncAPI, xUnit/Testcontainers, Gatling e k6.
+
+<img src="docs/img/architecture.svg" />
+<img src="docs/img/concurrency-idempotency.svg" />
+<img src="docs/img/event-ordering-recovery.svg" />
+<img src="docs/img/kafka-worker-resilience.svg" />
 
 ## Estrutura hexagonal
 
@@ -32,6 +32,8 @@ Implementação em **C#/.NET 10** de um Ledger de créditos e débitos com Event
 Os detalhes e a direção das dependências estão no [ADR-006](docs/adrs/ADR-006-arquitetura-hexagonal-e-solid.md).
 
 O repositório é um monorepo com um único hexágono do bounded context de Ledger e três hosts implantáveis. As APIs e o Worker não duplicam domínio e aplicação: cada host fornece seus adapters de entrada e seu composition root sobre o núcleo compartilhado.
+
+<img src="docs/img/hexagonal-architecture.svg" alt="Arquitetura hexagonal do bounded context de Ledger com um núcleo compartilhado e três hosts implantáveis" />
 
 ## Documentação
 
@@ -70,12 +72,12 @@ http://localhost:8080
 
 No ambiente local, cada API publica seu próprio contrato e interface:
 
-- Ledger
-OpenAPI: `http://localhost:8080/docs/ledger/openapi/v1.json`
-Scalar: `http://localhost:8080/docs/ledger/scalar/v1`;
-- Query
-OpenAPI: `http://localhost:8080/docs/query/openapi/v1.json` e
-Scalar: `http://localhost:8080/docs/query/scalar/v1`.
+#### Ledger
+- OpenAPI: http://localhost:8080/docs/ledger/openapi/v1.json
+- Scalar: http://localhost:8080/docs/ledger/scalar/v1
+####  Query
+- OpenAPI: http://localhost:8080/docs/query/openapi/v1.json
+- Scalar: http://localhost:8080/docs/query/scalar/v1`
 
 ## Token local
 
@@ -108,6 +110,9 @@ dotnet format Ledger.slnx --verify-no-changes --no-restore
 dotnet build Ledger.slnx -c Release --no-restore
 dotnet test Ledger.slnx -c Release --no-build
 ```
+<img src="docs/img/concurrency-simulation.png" />
+<img src="docs/img/ledger-simulation.png" width="100%"/>
+
 
 Os testes de integração usam Testcontainers e precisam de acesso ao Docker.
 
@@ -115,7 +120,7 @@ Os testes de integração usam Testcontainers e precisam de acesso ao Docker.
 
 As metas arquiteturais são **5.000 req/s na Ledger API** e **10.000 req/s na Query API**. Os cenários locais exercitam 10% dessas metas por padrão: **500 req/s na Ledger API** e **1.000 req/s na Query API**. Os resultados dependem do hardware; a capacidade final deve ser medida no ambiente alvo.
 
-Os runners abaixo executam todas as simulações encontradas. Por padrão, a carga é distribuída entre 500 contas para medir a capacidade agregada sem transformar uma única conta em um hot spot. Se `ACCESS_TOKEN` não for informado, eles geram automaticamente um token local irrestrito para o pool; com `ACCOUNT_POOL_SIZE=1`, o token fica restrito ao `ACCOUNT_ID`.
+Os runners abaixo executam todas as simulações encontradas. Por padrão, a carga é distribuída entre 500 contas para medir a capacidade agregada sem transformar uma única conta em um hot spot.
 
 Todos os cenários Gatling TypeScript:
 
@@ -123,36 +128,12 @@ Todos os cenários Gatling TypeScript:
 sh scripts/performance/run-all-gatling.sh
 ```
 
-O runner instala as dependências com `npm ci` na primeira execução e também valida o TypeScript. Para configurar a carga:
-
-- `ledgerSimulation`: carga agregada, mix de saldo eventual/forte/extrato, idempotência, leitura histórica e convergência da projeção;
-- `concurrencySimulation`: dois débitos paralelos contra o mesmo saldo e verificação forte de que apenas um foi confirmado.
-
-```bash
-ACCOUNT_ID="$ACCOUNT_ID" ACCESS_TOKEN="$TOKEN" \
-LEDGER_RPS=500 QUERY_RPS=1000 RAMP_SECONDS=10 STEADY_SECONDS=30 \
-  sh scripts/performance/run-all-gatling.sh
-```
 
 Todos os cenários k6:
 
 ```bash
 sh scripts/performance/run-all-k6.sh
 ```
-
-O runner usa o binário `k6` quando ele está instalado. Caso contrário, usa automaticamente a imagem `grafana/k6:latest` pelo Docker e configura o acesso ao host local.
-
-São executados os perfis `targets` (carga constante), `stress` (rampa até 125%), `spike` (salto súbito de 20% para 100%), `soak` (carga sustentada) e `breakpoint` (degraus de 25% até 125%). Todos falham quando há mais de 1% de erro, quando o p95 excede 500 ms na Ledger ou 200 ms na Query, ou quando o gerador descarta iterações.
-
-Para configurar a carga do k6:
-
-```bash
-ACCOUNT_ID="$ACCOUNT_ID" ACCESS_TOKEN="$TOKEN" \
-LEDGER_RPS=500 QUERY_RPS=1000 DURATION=30s \
-  sh scripts/performance/run-all-k6.sh
-```
-
-Variáveis comuns: `BASE_URL`, `ACCOUNT_ID`, `ACCOUNT_POOL_SIZE`, `ACCESS_TOKEN`, `LEDGER_RPS` e `QUERY_RPS`. Ao fornecer `ACCESS_TOKEN` para mais de uma conta, ele precisa ter acesso a todo o pool. Gatling também aceita `RAMP_SECONDS` e `STEADY_SECONDS`; k6 aceita `DURATION`, `STRESS_STAGE_DURATION`, `SPIKE_DURATION`, `SOAK_DURATION`, `BREAKPOINT_STAGE_DURATION`, `K6_BIN` e `K6_DOCKER_IMAGE`.
 
 ## Falhas e recuperação
 
@@ -191,9 +172,10 @@ docker compose down --volumes
 
 ## Limitações deliberadas
 
-- somente BRL;
-- sem transferências e sem partidas dobradas;
-- sem endpoint de estorno;
+- Escopo minímo para atender o desafio, permitindo evolução futura
+- Somente BRL;
+- Sem transferências e sem partidas dobradas (soma zero);
+- Sem endpoint de estorno;
 - Read Model com uma instância;
-- dois brokers priorizam consistência: com um broker indisponível, a publicação pausa e o Outbox preserva os eventos;
+- Dois brokers priorizam consistência: com um broker indisponível, a publicação pausa e o Outbox preserva os eventos;
 - Nginx representa didaticamente a borda; cloud usaria WAF, API Gateway e Load Balancer gerenciados.

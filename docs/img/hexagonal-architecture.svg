@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Arquitetura hexagonal do bounded context de Ledger</title>
+  <desc id="desc">Um único núcleo compartilhado de Domain e Application é usado pelos três hosts implantáveis Ledger API, Query API e Ledger Worker. Adaptadores de entrada e saída dependem das portas do núcleo.</desc>
+  <defs>
+    <marker id="arrowCyan" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#22d3ee"/></marker>
+    <marker id="arrowViolet" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#a78bfa"/></marker>
+    <marker id="arrowGreen" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 14 7 0 14Z" fill="#34d399"/></marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#020617" flood-opacity=".32"/></filter>
+    <linearGradient id="applicationFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#172554"/><stop offset="1" stop-color="#111c31"/></linearGradient>
+    <linearGradient id="domainFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#064e3b"/><stop offset="1" stop-color="#052e2b"/></linearGradient>
+    <style>
+      text{font-family:Inter,"Segoe UI",Arial,sans-serif}.title{font-size:34px;font-weight:750;fill:#f8fafc}.subtitle{font-size:15px;fill:#93c5fd}.section{font-size:12px;font-weight:750;letter-spacing:1.35px;fill:#94a3b8}.h{font-size:18px;font-weight:700;fill:#f8fafc}.h2{font-size:15px;font-weight:700;fill:#f8fafc}.t{font-size:13px;fill:#cbd5e1}.small{font-size:11.5px;fill:#94a3b8}.m{font-family:"SFMono-Regular",Consolas,monospace;font-size:11.5px;font-weight:650;fill:#e2e8f0}.pill{font-size:10.5px;font-weight:700;fill:#dbeafe}.inbound{fill:none;stroke:#22d3ee;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrowCyan)}.outbound{fill:none;stroke:#a78bfa;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrowViolet)}.core{fill:none;stroke:#34d399;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrowGreen)}
+    </style>
+  </defs>
+
+  <rect width="1600" height="1080" fill="#fff"/>
+  <rect x="20" y="20" width="1560" height="1040" rx="34" fill="#0f172a"/>
+  <text x="72" y="78" class="title">Um hexágono, três hosts implantáveis</text>
+  <text x="72" y="108" class="subtitle">Bounded context de Ledger · núcleo compartilhado · Ports &amp; Adapters · dependências apontam para dentro</text>
+  <rect x="1306" y="61" width="202" height="37" rx="19" fill="#172554" stroke="#3b82f6"/>
+  <text x="1407" y="85" text-anchor="middle" class="m">MONOREPO · 1 CONTEXTO</text>
+
+  <rect x="55" y="135" width="1490" height="790" rx="28" fill="#111c31" stroke="#334155"/>
+  <text x="82" y="170" class="section">ADAPTERS DE ENTRADA · HOSTS</text>
+  <text x="640" y="170" class="section">NÚCLEO COMPARTILHADO</text>
+  <text x="1260" y="170" class="section">ADAPTERS DE SAÍDA</text>
+
+  <!-- Dependências ficam atrás dos componentes e sempre apontam para o núcleo. -->
+  <path d="M368 279H397V319H418" class="inbound"/>
+  <path d="M368 471H418" class="inbound"/>
+  <path d="M368 682H418" class="inbound"/>
+  <path d="M1260 271H1188V319H1138" class="outbound"/>
+  <path d="M1260 433H1138" class="outbound"/>
+  <path d="M1260 595H1138" class="outbound"/>
+
+  <!-- Hosts implantáveis -->
+  <g filter="url(#shadow)">
+    <rect x="78" y="205" width="290" height="148" rx="20" fill="#1b2838" stroke="#60a5fa" stroke-width="2"/>
+    <circle cx="112" cy="241" r="16" fill="#1d4ed8"/><path d="M104 241h16M112 233v16" stroke="#dbeafe" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="140" y="247" class="h">Ledger.Api</text>
+    <text x="104" y="277" class="t">HTTP · comandos financeiros</text>
+    <text x="104" y="302" class="small">Endpoints · Middleware · Security</text>
+    <rect x="104" y="317" width="238" height="24" rx="12" fill="#172554"/>
+    <text x="223" y="333" text-anchor="middle" class="pill">Program.cs · composition root</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="78" y="397" width="290" height="148" rx="20" fill="#1b2838" stroke="#60a5fa" stroke-width="2"/>
+    <circle cx="112" cy="433" r="16" fill="#1d4ed8"/><path d="M103 433h18M103 427h18M103 439h13" stroke="#dbeafe" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="140" y="439" class="h">Query.Api</text>
+    <text x="104" y="469" class="t">HTTP · saldo e extrato</text>
+    <text x="104" y="494" class="small">Endpoints · Resilience · Security</text>
+    <rect x="104" y="509" width="238" height="24" rx="12" fill="#172554"/>
+    <text x="223" y="525" text-anchor="middle" class="pill">Program.cs · composition root</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="78" y="589" width="290" height="186" rx="20" fill="#1b2838" stroke="#34d399" stroke-width="2"/>
+    <circle cx="112" cy="625" r="16" fill="#047857"/><path d="M105 625h14M112 618v14" stroke="#d1fae5" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="140" y="631" class="h">Ledger.Worker</text>
+    <text x="104" y="661" class="t">background adapters de entrada</text>
+    <text x="104" y="686" class="small">polling · retry · backoff · commit</text>
+    <rect x="104" y="702" width="238" height="26" rx="13" fill="#052e2b"/>
+    <text x="223" y="719" text-anchor="middle" class="pill">loops chamam portas inbound</text>
+    <rect x="104" y="738" width="238" height="24" rx="12" fill="#172554"/>
+    <text x="223" y="754" text-anchor="middle" class="pill">Program.cs · composition root</text>
+  </g>
+
+  <rect x="104" y="798" width="238" height="72" rx="16" fill="#451a03" stroke="#f59e0b"/>
+  <text x="223" y="825" text-anchor="middle" class="h2">Hosts sem regra de negócio</text>
+  <text x="223" y="849" text-anchor="middle" class="small">configuram e conectam adapters</text>
+
+  <!-- Hexágono da Application -->
+  <g filter="url(#shadow)">
+    <path d="M544 195H1014L1165 500 1014 805H544L393 500Z" fill="url(#applicationFill)" stroke="#60a5fa" stroke-width="3"/>
+  </g>
+  <rect x="650" y="207" width="258" height="34" rx="17" fill="#1d4ed8"/>
+  <text x="779" y="230" text-anchor="middle" class="h2">Ledger.Application</text>
+  <text x="779" y="260" text-anchor="middle" class="t">casos de uso e contratos independentes de transporte</text>
+
+  <!-- Portas inbound -->
+  <rect x="426" y="285" width="205" height="68" rx="16" fill="#083344" stroke="#22d3ee"/>
+  <text x="528" y="308" text-anchor="middle" class="section" fill="#a5f3fc">PORTS / INBOUND</text>
+  <text x="528" y="330" text-anchor="middle" class="m">IPostMovementUseCase</text>
+  <text x="528" y="346" text-anchor="middle" class="m">ILedgerQueryUseCase</text>
+
+  <rect x="426" y="615" width="205" height="82" rx="16" fill="#083344" stroke="#22d3ee"/>
+  <text x="528" y="638" text-anchor="middle" class="section" fill="#a5f3fc">PORTS / INBOUND</text>
+  <text x="528" y="660" text-anchor="middle" class="m" style="font-size:10.5px">IPublishPendingOutboxUseCase</text>
+  <text x="528" y="680" text-anchor="middle" class="m" style="font-size:10.5px">IProjectLedgerEventUseCase</text>
+
+  <!-- Organização interna da Application -->
+  <rect x="651" y="293" width="254" height="58" rx="17" fill="#172554" stroke="#3b82f6"/>
+  <text x="778" y="319" text-anchor="middle" class="h2">UseCases</text>
+  <text x="778" y="339" text-anchor="middle" class="small">orquestração · consistência · recuperação</text>
+
+  <rect x="616" y="714" width="102" height="28" rx="14" fill="#172554"/><text x="667" y="733" text-anchor="middle" class="pill">Commands</text>
+  <rect x="727" y="714" width="92" height="28" rx="14" fill="#172554"/><text x="773" y="733" text-anchor="middle" class="pill">Queries</text>
+  <rect x="828" y="714" width="86" height="28" rx="14" fill="#172554"/><text x="871" y="733" text-anchor="middle" class="pill">Results</text>
+  <rect x="923" y="714" width="76" height="28" rx="14" fill="#172554"/><text x="961" y="733" text-anchor="middle" class="pill">Events</text>
+
+  <!-- Domínio, sem dependências externas -->
+  <g filter="url(#shadow)">
+    <path d="M661 367H897L970 500 897 633H661L588 500Z" fill="url(#domainFill)" stroke="#34d399" stroke-width="3"/>
+  </g>
+  <text x="779" y="425" text-anchor="middle" class="section" fill="#a7f3d0">NÚCLEO DO NEGÓCIO</text>
+  <text x="779" y="463" text-anchor="middle" class="h">Ledger.Domain</text>
+  <text x="779" y="489" text-anchor="middle" class="t">modelo puro · sem infraestrutura</text>
+  <rect x="651" y="514" width="112" height="28" rx="14" fill="#064e3b" stroke="#10b981"/><text x="707" y="533" text-anchor="middle" class="pill">Agregado</text>
+  <rect x="774" y="514" width="102" height="28" rx="14" fill="#064e3b" stroke="#10b981"/><text x="825" y="533" text-anchor="middle" class="pill">Eventos</text>
+  <rect x="651" y="553" width="112" height="28" rx="14" fill="#064e3b" stroke="#10b981"/><text x="707" y="572" text-anchor="middle" class="pill">Snapshots</text>
+  <rect x="774" y="553" width="118" height="28" rx="14" fill="#064e3b" stroke="#10b981"/><text x="833" y="572" text-anchor="middle" class="pill">Invariantes</text>
+  <text x="779" y="608" text-anchor="middle" class="small">não conhece HTTP · PostgreSQL · Kafka · EF</text>
+
+  <!-- Portas outbound -->
+  <rect x="926" y="285" width="205" height="68" rx="16" fill="#241c3b" stroke="#a78bfa"/>
+  <text x="1028" y="308" text-anchor="middle" class="section" fill="#ddd6fe">PORTS / OUTBOUND</text>
+  <text x="1028" y="330" text-anchor="middle" class="m">ILedgerStore</text>
+  <text x="1028" y="346" text-anchor="middle" class="m">ILedgerSession</text>
+
+  <rect x="926" y="407" width="205" height="58" rx="16" fill="#241c3b" stroke="#a78bfa"/>
+  <text x="1028" y="430" text-anchor="middle" class="section" fill="#ddd6fe">PORT / OUTBOUND</text>
+  <text x="1028" y="452" text-anchor="middle" class="m">IReadModelStore</text>
+
+  <rect x="926" y="551" width="205" height="58" rx="16" fill="#241c3b" stroke="#a78bfa"/>
+  <text x="1028" y="574" text-anchor="middle" class="section" fill="#ddd6fe">PORT / OUTBOUND</text>
+  <text x="1028" y="596" text-anchor="middle" class="m">IOutboxPublisher</text>
+
+  <!-- Implementações de saída -->
+  <g filter="url(#shadow)">
+    <rect x="1260" y="211" width="260" height="120" rx="19" fill="#1b2838" stroke="#a78bfa" stroke-width="2"/>
+    <text x="1288" y="248" class="h2">PostgreSQL Ledger</text>
+    <text x="1288" y="274" class="t">events · snapshots</text>
+    <text x="1288" y="298" class="t">idempotency · outbox</text>
+    <rect x="1436" y="286" width="58" height="24" rx="12" fill="#241c3b"/><text x="1465" y="302" text-anchor="middle" class="pill">ACID</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1260" y="373" width="260" height="120" rx="19" fill="#1b2838" stroke="#a78bfa" stroke-width="2"/>
+    <text x="1288" y="410" class="h2">PostgreSQL Read Model</text>
+    <text x="1288" y="436" class="t">balances · statements</text>
+    <text x="1288" y="460" class="t">processed_events</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1260" y="535" width="260" height="120" rx="19" fill="#1b2838" stroke="#f59e0b" stroke-width="2"/>
+    <circle cx="1294" cy="573" r="16" fill="#451a03" stroke="#f59e0b"/><path d="M1286 568h16M1286 574h16M1286 580h16" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+    <text x="1322" y="579" class="h2">Kafka</text>
+    <text x="1288" y="611" class="t">Outbox → broker</text>
+    <text x="1288" y="635" class="t">eventos particionados por conta</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1260" y="697" width="260" height="120" rx="19" fill="#1b2838" stroke="#a78bfa" stroke-width="2"/>
+    <text x="1288" y="734" class="h2">Migrations</text>
+    <text x="1288" y="760" class="t">Ledger DB · Read DB</text>
+    <text x="1288" y="784" class="t">adapter de inicialização do schema</text>
+  </g>
+
+  <rect x="1260" y="842" width="260" height="42" rx="21" fill="#241c3b" stroke="#8b5cf6"/>
+  <text x="1390" y="868" text-anchor="middle" class="m">Ledger.Adapters</text>
+
+  <!-- Rodapé / legenda -->
+  <rect x="55" y="945" width="1490" height="80" rx="24" fill="#111c31" stroke="#334155"/>
+  <line x1="87" y1="976" x2="139" y2="976" class="inbound"/><text x="158" y="981" class="t">entrada chama porta inbound</text>
+  <line x1="421" y1="976" x2="369" y2="976" class="outbound"/><text x="440" y="981" class="t">adapter implementa porta outbound</text>
+  <rect x="786" y="960" width="214" height="34" rx="17" fill="#052e2b"/><text x="893" y="982" text-anchor="middle" class="pill">1 DOMAIN · 1 APPLICATION</text>
+  <rect x="1014" y="960" width="214" height="34" rx="17" fill="#172554"/><text x="1121" y="982" text-anchor="middle" class="pill">3 PROCESSOS IMPLANTÁVEIS</text>
+  <rect x="1242" y="960" width="270" height="34" rx="17" fill="#451a03"/><text x="1377" y="982" text-anchor="middle" class="pill">ZERO DUPLICAÇÃO DO NÚCLEO</text>
+  <text x="87" y="1009" class="small">Regra de dependência: Domain ← Application ← adapters / hosts</text>
+</svg>
