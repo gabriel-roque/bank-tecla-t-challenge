@@ -164,20 +164,8 @@ O pipeline executa `dotnet restore`, format/analyzers, `dotnet build --configura
 
 Esses artefatos de producao agregam valor, mas nao fazem parte da entrega do desafio. A delimitacao esta registrada no ADR-010.
 
-## 12. Requisitos eliminatorios e criterio de pronto
+## 12. Trade-offs assumidos
 
-O desenho cobre a solucao, mas a submissao somente esta pronta quando estes itens forem verificaveis no repositorio publico:
-
-- [ ] Implementacao em C#.
-- [ ] Testes automatizados passando.
-- [ ] Repositorio publico no GitHub.
-- [ ] README com instrucoes reproduziveis de execucao local.
-- [ ] Toda documentacao versionada no proprio repositorio.
-- [ ] Build limpo, com warnings tratados como erros.
-
-## 13. Trade-offs assumidos
-
-- Event Sourcing melhora auditoria, replay e saldo historico, mas aumenta complexidade de schema, replay e operacao. Por isso fica restrito ao Ledger.
 - Consistencia forte em toda leitura custaria escala e disponibilidade. O contrato oferece leitura projetada e leitura forte de forma explicita.
 - PostgreSQL como Event Store e suficiente para o escopo inicial e simplifica ACID, idempotencia e operacao. Um produto especializado so deve entrar apos teste de escala e maturidade operacional. A comparacao com EventStoreDB esta registrada no ADR-005.
 - Snapshots reduzem latencia, mas introduzem manutencao. Como sao derivados, podem ser apagados e reconstruidos sem perda financeira.

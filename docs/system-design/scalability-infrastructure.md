@@ -35,41 +35,6 @@ No desafio, o Docker Compose demonstra pelo menos duas instâncias para as aplic
 
 No Kafka local, os tópicos financeiros usam `replication.factor=2`, `min.insync.replicas=2` e produtores com `acks=all`. Se um broker cair, a publicação pausa e o Outbox acumula mensagens; a Ledger API continua gravando com segurança no PostgreSQL.
 
-## Implementação com Docker Compose
-
-O ambiente local terá os seguintes containers:
-
-```text
-edge                         # Nginx: gateway, rate limit e load balancing local
-ledger-api-1, ledger-api-2
-query-api-1, query-api-2
-ledger-worker-1, ledger-worker-2
-kafka-1, kafka-2
-ledger-db-primary, ledger-db-standby
-read-db
-```
-
-O Nginx será o único ponto de entrada local e distribuirá requisições entre as duas instâncias de cada API. Ele representa, de forma simplificada, API Gateway e Load Balancer. Regras básicas de rate limit e bloqueio de payload podem demonstrar parte do WAF, sem tentar reproduzir um serviço de segurança completo.
-
-Essa simplificação está formalizada no [ADR-002](../adrs/ADR-002-borda-nginx-cloud.md).
-
-Cada uma das três aplicações possui sua própria imagem e pode receber mais réplicas sem alterar as demais. Nenhum container de aplicação guarda sessão ou estado local.
-
-Exemplo de execução previsto:
-
-```bash
-docker compose up --build -d
-docker compose ps
-```
-
-Os health checks do Compose aguardam PostgreSQL e Kafka antes de liberar APIs e Workers. Volumes persistem os dois bancos e os brokers entre reinicializações.
-
-Para demonstrar o conceito de Multi-AZ, somente o PostgreSQL Ledger terá primário e standby usando **WAL Streaming Replication**. A replicação será síncrona: o commit aguarda o WAL ser persistido pelo standby. Um teste controlado interromperá o primário, promoverá o standby e validará que uma requisição repetida com a mesma `Idempotency-Key` não perde nem duplica a movimentação.
-
-Essa decisão está formalizada no [ADR-003](../adrs/ADR-003-replicacao-wal.md). Como os containers executam no mesmo host, o teste demonstra o mecanismo de replicação e failover, mas não constitui Multi-AZ real.
-
-O Read Model terá uma única instância no desafio. Se disponibilidade de consultas se tornar um requisito de produção, poderá receber um standby com WAL assíncrono. Essa decisão está no [ADR-004](../adrs/ADR-004-read-model-instancia-unica.md).
-
 ### Mudanças em cloud
 
 Em produção, Docker Compose seria substituído por Kubernetes, ECS ou equivalente. O Nginx local daria lugar a WAF, API Gateway e Load Balancer gerenciados; as réplicas seriam distribuídas em zonas diferentes; PostgreSQL e Kafka usariam serviços gerenciados com failover, backup e recuperação testados. As quantidades seriam ajustadas por testes de carga e custo, sem obrigação de permanecer exatamente em duas instâncias.

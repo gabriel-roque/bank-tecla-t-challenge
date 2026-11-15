@@ -77,7 +77,7 @@ No ambiente local, cada API publica seu próprio contrato e interface:
 - Scalar: http://localhost:8080/docs/ledger/scalar/v1
 ####  Query
 - OpenAPI: http://localhost:8080/docs/query/openapi/v1.json
-- Scalar: http://localhost:8080/docs/query/scalar/v1`
+- Scalar: http://localhost:8080/docs/query/scalar/v1
 
 ## Token local
 
@@ -110,13 +110,13 @@ dotnet format Ledger.slnx --verify-no-changes --no-restore
 dotnet build Ledger.slnx -c Release --no-restore
 dotnet test Ledger.slnx -c Release --no-build
 ```
-<img src="docs/img/concurrency-simulation.png" />
-<img src="docs/img/ledger-simulation.png" width="100%"/>
-
 
 Os testes de integração usam Testcontainers e precisam de acesso ao Docker.
 
 ## Testes de carga
+
+<img src="docs/img/concurrency-simulation.png" />
+<img src="docs/img/ledger-simulation.png" width="100%"/>
 
 As metas arquiteturais são **5.000 req/s na Ledger API** e **10.000 req/s na Query API**. Os cenários locais exercitam 10% dessas metas por padrão: **500 req/s na Ledger API** e **1.000 req/s na Query API**. Os resultados dependem do hardware; a capacidade final deve ser medida no ambiente alvo.
 
@@ -134,6 +134,16 @@ Todos os cenários k6:
 ```bash
 sh scripts/performance/run-all-k6.sh
 ```
+
+Cada execução gera dashboards HTML e resumos JSON em `reports/k6/<data-hora>/`. O período de agregação dos gráficos é de 1 segundo para que os cenários curtos também produzam séries visíveis. Para salvar adicionalmente todos os pontos das séries temporais em JSON, use:
+
+```bash
+K6_EXPORT_RAW=true sh scripts/performance/run-all-k6.sh
+```
+
+Os resultados brutos podem ocupar bastante espaço em cargas elevadas.
+
+<img src="docs/img/k6-dashboard.png">
 
 ## Falhas e recuperação
 
@@ -157,6 +167,10 @@ Comportamento esperado:
 - Read Model perdido: reprojeção completa a partir do Ledger.
 
 O Compose demonstra mecanismos de redundância no mesmo host; ele não representa Multi-AZ real.
+
+Detalhes em:
+- [Escalabilidade e infraestrutura](docs/system-design/scalability-infrastructure.md)
+- [FAQ de falhas, concorrência e idempotência](docs/system-design/faq.md)
 
 ## Encerramento
 

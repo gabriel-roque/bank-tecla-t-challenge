@@ -9,6 +9,7 @@
 TestResults/
 coverage/
 artifacts/
+reports/k6/
 .gatling/
 tests-performance/gatling/node_modules/
 tests-performance/gatling/target/
