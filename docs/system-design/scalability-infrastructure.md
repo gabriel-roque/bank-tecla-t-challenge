@@ -29,11 +29,11 @@ No desafio, o Docker Compose demonstra pelo menos duas instâncias para as aplic
 | Ledger API | 2 instâncias | 2+ réplicas multi-AZ com autoscaling por RPS, CPU e latência | Limitar pool de conexões para não saturar o writer PostgreSQL |
 | Query API | 2 instâncias | 2+ réplicas multi-AZ com autoscaling independente | Consulta a instância única do PostgreSQL Read no desafio |
 | Ledger Worker | 2 instâncias | Escala por Outbox pendente e consumer lag | Publisher escolhe a menor sequência pendente por conta com `SKIP LOCKED`; Consumer usa consumer group |
-| Kafka | 2 brokers | Em cloud, 3+ brokers multi-AZ e mais partições conforme throughput | No desafio usa fator de replicação 2; com apenas dois brokers a tolerância a falhas é limitada |
+| Kafka | 3 nós broker/controller | 3+ brokers multi-AZ; controllers dedicados quando a escala justificar | RF=3, min ISR=2 e seis partições; o host local continua sendo um domínio único de falha |
 | PostgreSQL Ledger | 1 primário + 1 standby | Banco gerenciado multi-AZ, failover automático, PITR e réplicas adicionais | Escrita da mesma conta precisa continuar serializada |
 | PostgreSQL Read | 1 instância | Se o SLA exigir, primário + standby via WAL assíncrono | Pode ser reconstruído; não participa da confirmação do crédito/débito |
 
-No Kafka local, os tópicos financeiros usam `replication.factor=2`, `min.insync.replicas=2` e produtores com `acks=all`. Se um broker cair, a publicação pausa e o Outbox acumula mensagens; a Ledger API continua gravando com segurança no PostgreSQL.
+No Kafka local, o tópico financeiro usa `replication.factor=3`, `min.insync.replicas=2` e produtores com `acks=all`. Os três nós também formam o quórum KRaft. Se um broker cair, duas réplicas permanecem sincronizadas, o quórum conserva dois de três controllers e publicação/consumo continuam. Se dois brokers caírem, novas publicações pausam para não confirmar dados com durabilidade insuficiente; a Ledger API continua gravando no PostgreSQL e o Outbox acumula mensagens.
 
 ### Mudanças em cloud
 
@@ -59,6 +59,7 @@ Isso produz entrega **pelo menos uma vez** no transporte e efeito **uma vez** no
 | Falha | Comportamento |
 |---|---|
 | Uma instância de API cai | Load Balancer remove a réplica; outras continuam atendendo |
+| Um broker Kafka cai | Líderes são reeleitos; RF=3, min ISR=2 e quórum KRaft 2/3 mantêm publicação e projeção |
 | Kafka fica indisponível | Escritas continuam no Ledger e mensagens aguardam no Outbox |
 | Projection Consumer para | Ledger continua correto; mensagens acumulam no Kafka como consumer lag e o Read Model fica atrasado |
 | Todas as réplicas do Ledger Worker param | Escritas continuam enquanto houver capacidade segura; mensagens aguardam no Outbox até uma réplica voltar |
@@ -73,3 +74,5 @@ Isso produz entrega **pelo menos uma vez** no transporte e efeito **uma vez** no
 - Retry exponencial com jitter apenas em operações idempotentes.
 - Timeouts, circuit breaker, bulkhead e backpressure.
 - Backups, PITR e testes periódicos de restore e failover.
+
+O script `scripts/failure/kafka-broker-failover.sh` interrompe um broker, executa o fluxo completo durante a falha, valida Outbox e consumer lag, restaura o nó e aguarda todas as partições retornarem a três réplicas sincronizadas.

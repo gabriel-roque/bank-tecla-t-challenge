@@ -11,7 +11,7 @@ Implementação em **C#/.NET 10** de um Ledger de créditos e débitos com Event
 - Outbox ordenado por conta, Kafka e projeção idempotente;
 - snapshots transacionais a cada 50 eventos;
 - JWT, scopes e autorização por conta;
-- duas réplicas de cada aplicação, dois brokers Kafka e Nginx;
+- duas réplicas de cada aplicação, três nós Kafka broker/controller e Nginx;
 - PostgreSQL Ledger primário/standby com WAL síncrono para demonstração local;
 - OpenAPI/Scalar, AsyncAPI, xUnit/Testcontainers, Gatling e k6.
 
@@ -45,11 +45,12 @@ O repositório é um monorepo com um único hexágono do bounded context de Ledg
 - [Modelo de dados](docs/system-design/data-model.md)
 - [Ledger Worker](docs/system-design/worker.md)
 - [FAQ de falhas, concorrência e idempotência](docs/system-design/faq.md)
+- [ADR-013 — Kafka com três nós e tolerância à falha](docs/adrs/ADR-013-kafka-tres-nos-alta-disponibilidade.md)
 
 ## Pré-requisitos
 
 - Docker Engine com Docker Compose v2;
-- aproximadamente 8 GB de memória disponíveis para o ambiente completo;
+- aproximadamente 10 GB de memória disponíveis para o ambiente completo;
 - Node.js 22+ para gerar tokens e executar o smoke test;
 - .NET SDK 10 apenas para build/testes fora dos containers;
 - k6 opcional para testes de stress.
@@ -120,7 +121,7 @@ Os testes de integração usam Testcontainers e precisam de acesso ao Docker.
 
 As metas arquiteturais são **5.000 req/s na Ledger API** e **10.000 req/s na Query API**. Os cenários locais exercitam 10% dessas metas por padrão: **500 req/s na Ledger API** e **1.000 req/s na Query API**. Os resultados dependem do hardware; a capacidade final deve ser medida no ambiente alvo.
 
-Os runners abaixo executam todas as simulações encontradas. Por padrão, a carga é distribuída entre 500 contas para medir a capacidade agregada sem transformar uma única conta em um hot spot.
+Os runners abaixo executam todas as simulações encontradas. Por padrão, a carga é distribuída entre 500 contas para medir a capacidade agregada sem transformar uma única conta em um hot spot. O runner k6 usa uma faixa de contas diferente por perfil e aplica cooldown entre arquivos, impedindo que backlog e histórico de um cenário contaminem o seguinte.
 
 Todos os cenários Gatling TypeScript:
 
@@ -151,6 +152,7 @@ Os scripts abaixo interrompem componentes do ambiente local:
 
 ```bash
 sh scripts/failure/kafka-outage.sh
+sh scripts/failure/kafka-broker-failover.sh
 sh scripts/failure/read-outage.sh
 sh scripts/failure/worker-outage.sh
 sh scripts/failure/api-replica-outage.sh
@@ -160,7 +162,8 @@ sh scripts/failure/replay-read-model.sh
 
 Comportamento esperado:
 
-- Kafka parado: escritas continuam e o Outbox acumula;
+- um broker Kafka parado: o cluster mantém quórum, publicação e projeção com duas réplicas sincronizadas;
+- todo o Kafka parado: escritas continuam e o Outbox acumula;
 - Read DB parado: saldo usa fallback forte; extrato e movimentação retornam `503`;
 - Workers parados: eventos permanecem no Outbox;
 - primário parado: promoção controlada do standby e reconexão multi-host;
@@ -191,5 +194,5 @@ docker compose down --volumes
 - Sem transferências e sem partidas dobradas (soma zero);
 - Sem endpoint de estorno;
 - Read Model com uma instância;
-- Dois brokers priorizam consistência: com um broker indisponível, a publicação pausa e o Outbox preserva os eventos;
+- os três nós Kafka locais compartilham o mesmo host; a tolerância a falha demonstrada não substitui distribuição Multi-AZ;
 - Nginx representa didaticamente a borda; cloud usaria WAF, API Gateway e Load Balancer gerenciados.

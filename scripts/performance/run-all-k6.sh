@@ -29,6 +29,9 @@ STRESS_STAGE_DURATION=${STRESS_STAGE_DURATION:-5s}
 SPIKE_DURATION=${SPIKE_DURATION:-5s}
 SOAK_DURATION=${SOAK_DURATION:-$DURATION}
 BREAKPOINT_STAGE_DURATION=${BREAKPOINT_STAGE_DURATION:-5s}
+HTTP_TIMEOUT=${HTTP_TIMEOUT:-15s}
+K6_COOLDOWN_SECONDS=${K6_COOLDOWN_SECONDS:-15}
+K6_ACCOUNT_POOL_BASE=${K6_ACCOUNT_POOL_BASE:-$((($(date +%s) % 1000000) * 100000))}
 
 if [ -z "${ACCESS_TOKEN:-}" ]; then
   if [ "$ACCOUNT_POOL_SIZE" -gt 1 ]; then
@@ -40,6 +43,7 @@ fi
 
 export BASE_URL ACCOUNT_ID ACCOUNT_POOL_SIZE ACCESS_TOKEN LEDGER_RPS QUERY_RPS DURATION
 export STRESS_STAGE_DURATION SPIKE_DURATION SOAK_DURATION BREAKPOINT_STAGE_DURATION
+export HTTP_TIMEOUT
 
 mkdir -p "$DASHBOARDS_DIRECTORY" "$SUMMARIES_DIRECTORY"
 if [ "$K6_EXPORT_RAW" = true ]; then
@@ -79,6 +83,7 @@ echo "dashboards=$DASHBOARDS_DIRECTORY"
 
 found=false
 failed_scenarios=""
+scenario_index=0
 for scenario_file in "$K6_DIRECTORY"/*.js; do
   if [ ! -f "$scenario_file" ]; then
     continue
@@ -89,8 +94,14 @@ for scenario_file in "$K6_DIRECTORY"/*.js; do
   scenario_name=${scenario_filename%.js}
   dashboard_file="$DASHBOARDS_DIRECTORY/$scenario_name.html"
   summary_file="$SUMMARIES_DIRECTORY/$scenario_name.json"
+  account_pool_offset=$((K6_ACCOUNT_POOL_BASE + (scenario_index * ACCOUNT_POOL_SIZE)))
 
-  echo "Executando arquivo k6: $scenario_filename"
+  if [ "$scenario_index" -gt 0 ] && [ "$K6_COOLDOWN_SECONDS" -gt 0 ]; then
+    echo "Aguardando ${K6_COOLDOWN_SECONDS}s para isolar o próximo perfil..."
+    sleep "$K6_COOLDOWN_SECONDS"
+  fi
+
+  echo "Executando arquivo k6: $scenario_filename (account offset=$account_pool_offset)"
   if [ "$K6_MODE" = native ]; then
     set -- run --summary-export "$summary_file"
     if [ "$K6_EXPORT_RAW" = true ]; then
@@ -98,7 +109,9 @@ for scenario_file in "$K6_DIRECTORY"/*.js; do
     fi
     set -- "$@" "$scenario_file"
 
-    if ! K6_WEB_DASHBOARD=true \
+    if ! ACCOUNT_POOL_OFFSET="$account_pool_offset" \
+      K6_PROFILE="$scenario_name" \
+      K6_WEB_DASHBOARD=true \
       K6_WEB_DASHBOARD_PORT=-1 \
       K6_WEB_DASHBOARD_OPEN=false \
       K6_WEB_DASHBOARD_PERIOD="$K6_DASHBOARD_PERIOD" \
@@ -124,6 +137,8 @@ for scenario_file in "$K6_DIRECTORY"/*.js; do
       -e BASE_URL="$docker_base_url" \
       -e ACCOUNT_ID="$ACCOUNT_ID" \
       -e ACCOUNT_POOL_SIZE="$ACCOUNT_POOL_SIZE" \
+      -e ACCOUNT_POOL_OFFSET="$account_pool_offset" \
+      -e K6_PROFILE="$scenario_name" \
       -e ACCESS_TOKEN="$ACCESS_TOKEN" \
       -e LEDGER_RPS="$LEDGER_RPS" \
       -e QUERY_RPS="$QUERY_RPS" \
@@ -132,6 +147,7 @@ for scenario_file in "$K6_DIRECTORY"/*.js; do
       -e SPIKE_DURATION="$SPIKE_DURATION" \
       -e SOAK_DURATION="$SOAK_DURATION" \
       -e BREAKPOINT_STAGE_DURATION="$BREAKPOINT_STAGE_DURATION" \
+      -e HTTP_TIMEOUT="$HTTP_TIMEOUT" \
       -e K6_WEB_DASHBOARD=true \
       -e K6_WEB_DASHBOARD_PORT=-1 \
       -e K6_WEB_DASHBOARD_OPEN=false \
@@ -143,6 +159,7 @@ for scenario_file in "$K6_DIRECTORY"/*.js; do
       failed_scenarios="$failed_scenarios $scenario_name"
     fi
   fi
+  scenario_index=$((scenario_index + 1))
 done
 
 if [ "$found" = false ]; then

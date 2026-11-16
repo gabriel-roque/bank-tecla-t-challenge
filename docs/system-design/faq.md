@@ -24,9 +24,9 @@ O Nginx distribui tráfego entre duas réplicas e deixa de encaminhar para a ins
 
 ## E se uma instância do Kafka morrer?
 
-No ambiente local, o tópico usa fator de replicação 2, `min.insync.replicas=2` e o produtor usa `acks=all`. Com um broker indisponível, novas publicações pausam e permanecem no Outbox; créditos e débitos continuam sendo confirmados no Ledger. Quando o broker retorna, o Worker drena o backlog.
+No ambiente local, o tópico usa fator de replicação 3, `min.insync.replicas=2` e o produtor usa `acks=all`. Os três nós são brokers e controllers KRaft. Com um broker indisponível, ainda existem duas réplicas sincronizadas e dois controllers no quórum; novas publicações, consumo e projeção continuam.
 
-Essa escolha prioriza consistência e ausência de perda. Em produção, a recomendação é usar pelo menos três brokers em zonas distintas para tolerar uma falha sem interromper publicações.
+Quando o broker retorna, ele recupera o log que perdeu e volta ao ISR de cada partição. O script `scripts/failure/kafka-broker-failover.sh` valida o fluxo durante a falha, a convergência da projeção, o retorno a três ISR e consumer lag zero. No Compose os três containers ainda compartilham máquina e rede; em produção, os brokers devem ficar em zonas distintas.
 
 ## E se todas as instâncias do Kafka ficarem indisponíveis?
 

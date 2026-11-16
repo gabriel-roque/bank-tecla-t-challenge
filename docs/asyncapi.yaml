@@ -6,9 +6,9 @@ info:
 defaultContentType: application/json
 servers:
   localKafka:
-    host: kafka-1:9092,kafka-2:9092
+    host: kafka-1:9092,kafka-2:9092,kafka-3:9092
     protocol: kafka
-    description: Cluster Docker local com dois brokers.
+    description: Cluster Docker local com três nós broker/controller, fator de replicação 3 e min ISR 2.
 channels:
   ledgerMovements:
     address: ledger.movements.v1

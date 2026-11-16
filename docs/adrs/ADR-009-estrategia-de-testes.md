@@ -59,9 +59,9 @@ Será usado para testes que buscam os limites da solução:
 - **soak:** manter carga por período prolongado para detectar degradação;
 - **breakpoint:** identificar a capacidade máxima sustentável.
 
-Os scripts definirão thresholds, como percentis de latência e taxa máxima de erro. Os valores definitivos serão estabelecidos após uma execução de referência no ambiente local.
+Os scripts definirão thresholds, como percentis de latência, taxa máxima de erro, taxa mínima de checks e ausência de iterações descartadas. Cada requisição possui timeout explícito para que saturação apareça como falha mensurável, em vez de permanecer em voo até o encerramento do cenário. Os valores definitivos serão estabelecidos após uma execução de referência no ambiente local.
 
-Os perfis implementados são `targets` (referência constante), `stress` (rampa progressiva), `spike` (salto súbito até a meta), `soak` (duração configurável) e `breakpoint` (degraus de capacidade). A carga agregada é distribuída entre contas; concorrência sobre a mesma conta permanece em cenários comportamentais dedicados para não confundir contenção de um agregado com capacidade total da API.
+Os perfis implementados são `targets` (referência constante), `stress` (rampa progressiva), `spike` (salto súbito até a meta), `soak` (duração configurável) e `breakpoint` (degraus de capacidade). A carga agregada é distribuída entre contas; concorrência sobre a mesma conta permanece em cenários comportamentais dedicados para não confundir contenção de um agregado com capacidade total da API. O runner reserva uma faixa distinta de contas para cada perfil e aguarda um cooldown configurável entre arquivos, evitando que histórico, conexões em voo ou backlog do teste anterior alterem o resultado do próximo.
 
 O k6 também atuará somente por HTTP. Não será utilizada extensão Kafka no MVP.
 
@@ -75,11 +75,14 @@ Cenários previstos:
 |---|---|
 | Uma réplica de API é interrompida | Nginx encaminha para a réplica saudável |
 | PostgreSQL Read é interrompido | Saldo usa fallback forte; extrato e movimentação retornam `503` |
-| Kafka é interrompido | Créditos e débitos continuam; mensagens acumulam no Outbox |
+| Um broker Kafka é interrompido | Cluster mantém quórum 2/3, publicação e projeção; após a volta, ISR retorna a três e lag converge a zero |
+| Todo o Kafka é interrompido | Créditos e débitos continuam; mensagens acumulam no Outbox |
 | Projection Consumer é interrompido | Ledger continua correto, consumer lag cresce no Kafka e Read Model fica defasado |
 | PostgreSQL Ledger primário é interrompido | Failover controlado para o standby, sem duplicar movimentações |
 
 Os scripts Docker provocam a falha; Gatling ou k6 apenas geram tráfego e validam o comportamento HTTP.
+
+O cenário automatizado de broker único também valida a topologia antes de começar (`replication.factor=3`, seis partições e `min.insync.replicas=2`), executa o smoke test durante a falha, confirma Outbox drenado e consumer lag zero, restaura o broker e aguarda todas as partições retornarem a três réplicas no ISR.
 
 ## Execução no pipeline
 
